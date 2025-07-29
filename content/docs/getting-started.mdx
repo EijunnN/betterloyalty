@@ -1,0 +1,185 @@
+---
+title: Guía de Inicio Rápido
+description: Implementa un sistema de lealtad funcional desde cero en menos de 5 minutos.
+---
+
+import { Steps } from 'fumadocs-ui/components/steps';
+import { Callout } from 'fumadocs-ui/components/callout';
+import { File, Files } from 'fumadocs-ui/components/files';
+
+# Guía de Inicio Rápido
+
+Esta guía te llevará a través de los pasos esenciales para integrar `better-loyalty` en tu proyecto de TypeScript. Al final, tendrás un sistema de puntos y niveles completamente funcional.
+
+## Paso 1: Instalación
+
+Primero, añade `better-loyalty` a las dependencias de tu proyecto.
+
+```bash title="Terminal"
+pnpm add better-loyalty
+```
+
+## Paso 2: El Adaptador de Base de Datos
+
+`better-loyalty` no sabe cómo hablar con tu base de datos; tú debes enseñarle. Esto le da la flexibilidad para funcionar con cualquier sistema de persistencia (PostgreSQL, MongoDB, Firebase, etc.).
+
+Para ello, implementa la interfaz `IDatabaseAdapter`.
+
+<Callout title="¿Dónde poner este código?">
+  Recomendamos crear una carpeta `lib` o `services` en la raíz de tu proyecto para alojar esta lógica.
+</Callout>
+
+Crea un archivo, por ejemplo, `lib/loyaltyAdapter.ts`, y pega el siguiente código. Para este ejemplo, usaremos una simple simulación en memoria.
+
+```typescript title="lib/loyaltyAdapter.ts"
+import { 
+  IDatabaseAdapter, 
+  UserLoyaltyProfile, 
+  Tier, 
+  UserId 
+} from 'better-loyalty';
+
+// En un proyecto real, estos datos vendrían de tu base de datos.
+const MOCK_DB = {
+  users: new Map<UserId, UserLoyaltyProfile>(),
+  tiers: [
+    { id: 'bronze', name: 'Bronce', minPoints: 0, benefits: [] },
+    { id: 'silver', name: 'Plata', minPoints: 500, benefits: ['free_shipping'] },
+    { id: 'gold', name: 'Oro', minPoints: 2000, benefits: ['early_access'] },
+  ],
+};
+
+export const myDbAdapter: IDatabaseAdapter = {
+  async getUserProfile(userId: UserId): Promise<UserLoyaltyProfile | null> {
+    console.log(`[DB Adapter] Buscando perfil para el usuario: ${userId}`);
+    const profile = MOCK_DB.users.get(userId);
+    // Devolvemos una copia para simular el comportamiento de una DB real
+    return profile ? JSON.parse(JSON.stringify(profile)) : null;
+  },
+
+  async saveUserProfile(profile: UserLoyaltyProfile): Promise<UserLoyaltyProfile> {
+    console.log(`[DB Adapter] Guardando perfil para el usuario: ${profile.userId}`);
+    MOCK_DB.users.set(profile.userId, profile);
+    return JSON.parse(JSON.stringify(profile));
+  },
+
+  async getTiers(): Promise<Tier[]> {
+    console.log(`[DB Adapter] Obteniendo todos los niveles`);
+    return [...MOCK_DB.tiers];
+  },
+};
+```
+
+## Paso 3: Las Reglas de Lealtad
+
+El corazón de `better-loyalty` es su motor de reglas. Aquí es donde defines la lógica de tu negocio de forma declarativa.
+
+Crea un archivo `lib/loyaltyRules.ts`.
+
+```typescript title="lib/loyaltyRules.ts"
+import { LoyaltyRule, RuleContext } from 'better-loyalty';
+
+// Define la "forma" de los datos que esperas en tus eventos.
+// ¡Esto te da seguridad de tipo y autocompletado!
+interface PurchasePayload {
+  amount: number;
+  category: string;
+}
+
+interface ReviewPayload {
+  rating: number;
+}
+
+// Creamos un array con todas nuestras reglas de negocio.
+export const myRules: LoyaltyRule<any>[] = [
+  {
+    name: 'Puntos por compra',
+    event: 'purchase_completed',
+    // La condición se evalúa para ver si la regla debe aplicarse.
+    condition: (ctx: RuleContext<PurchasePayload>) => ctx.payload.amount > 0,
+    // La acción define cuántos puntos otorgar.
+    action: (ctx: RuleContext<PurchasePayload>) => ({
+      points: Math.floor(ctx.payload.amount), // 1 punto por cada dólar gastado
+      actionName: `Compra de $${ctx.payload.amount}`,
+    }),
+  },
+  {
+    name: 'Bonus por reseña positiva',
+    event: 'review_created',
+    condition: (ctx: RuleContext<ReviewPayload>) => ctx.payload.rating >= 4,
+    action: () => ({
+      points: 50,
+      actionName: 'Reseña positiva',
+    }),
+  },
+];
+```
+
+## Paso 4: Inicialización del Sistema
+
+Ahora, junta todo en un archivo central desde donde exportarás tu instancia del sistema de lealtad.
+
+Crea el archivo `lib/loyaltySystem.ts`.
+
+```typescript title="lib/loyaltySystem.ts"
+import { BetterLoyalty } from 'better-loyalty';
+import { myDbAdapter } from './loyaltyAdapter';
+import { myRules } from './loyaltyRules';
+
+// 1. Creamos la instancia principal de nuestro sistema
+export const loyaltySystem = new BetterLoyalty(myDbAdapter, myRules);
+
+// 2. (Opcional pero recomendado) Reaccionamos a eventos
+// Esto es perfecto para enviar notificaciones, emails, o webhooks.
+loyaltySystem.on('tier_changed', ({ userId, to }) => {
+  if (to) {
+    console.log(`¡EVENTO! El usuario ${userId} ha ascendido al nivel ${to.name}. ¡Enviando email de felicitación!`);
+    // emailService.sendTierUpEmail(userId, to.name);
+  }
+});
+
+loyaltySystem.on('points_updated', ({ userId, newBalance, action }) => {
+  console.log(`¡EVENTO! Puntos actualizados para ${userId} por "${action}". Nuevo saldo: ${newBalance}`);
+});
+
+```
+
+## Paso 5: ¡Úsalo!
+
+¡Ya está todo configurado! Ahora puedes importar `loyaltySystem` en cualquier parte de tu backend (API Routes, Server Actions, etc.) y procesar eventos de negocio.
+
+Imagina que tienes una API para finalizar una compra.
+
+```typescript title="pages/api/complete-purchase.ts"
+import { loyaltySystem } from '@/lib/loyaltySystem';
+
+export default async function handler(req, res) {
+  const userId = 'customer-123'; // Obtendrías esto de la sesión del usuario
+  const purchaseAmount = 150;
+
+  // ... Lógica para procesar el pago y guardar la orden ...
+
+  console.log(`\n--- PROCESANDO EVENTO DE COMPRA PARA ${userId} ---`);
+  // Simplemente anuncia que el evento ocurrió.
+  // better-loyalty se encargará del resto.
+  await loyaltySystem.processEvent({
+    userId,
+    event: 'purchase_completed',
+    payload: { amount: purchaseAmount, category: 'electronics' },
+  });
+
+  res.status(200).json({ message: 'Compra completada con éxito' });
+}
+```
+
+### ¡Felicidades!
+
+Has implementado un sistema de lealtad completo. El usuario `customer-123` ahora tendrá 150 puntos en su perfil. Si este saldo le permite alcanzar un nuevo nivel, el evento `tier_changed` se habrá disparado automáticamente.
+
+### Próximos Pasos
+
+Ahora que entiendes el flujo básico, explora los conceptos clave en más detalle:
+- **[Motor de Reglas](/docs/core-concepts/rule-engine):** Aprende a crear condiciones y acciones más complejas.
+- **[Sistema de Eventos](/docs/core-concepts/event-system):** Descubre todo lo que puedes hacer reaccionando a los eventos de lealtad.
+- **[API Reference](/docs/api-reference):** Consulta la documentación completa de todos los tipos e interfaces.
+

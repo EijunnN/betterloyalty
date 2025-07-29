@@ -1,0 +1,181 @@
+---
+title: El Sistema de Eventos
+description: Reacciona en tiempo real a los cambios en la lealtad de tus usuarios para crear experiencias dinámicas.
+---
+
+import { Callout } from "fumadocs-ui/components/callout";
+import { Tab, Tabs } from "fumadocs-ui/components/tabs";
+
+`better-loyalty` no solo procesa lógica, también **emite eventos** cuando ocurren acciones importantes. Esto te permite "engancharte" a la lógica interna del framework para disparar acciones secundarias como enviar emails, notificaciones push, actualizar la UI en tiempo real o registrar analíticas.
+
+El sistema de eventos está construido sobre un emisor simple y ligero, utilizando los métodos `on(...)` para suscribirse y `off(...)` para desuscribirse.
+
+## Eventos Disponibles
+
+Actualmente, `better-loyalty` emite dos eventos clave:
+
+### 1. `points_updated`
+
+- **Cuándo se dispara**: Cada vez que los puntos de un usuario cambian (ya sea por una regla o por una llamada manual a `.add()` o `.subtract()`).
+- **Payload**:
+  ```typescript
+  {
+    userId: UserId;
+    points: number; // La cantidad de puntos que cambiaron (positivo o negativo)
+    action: string; // El nombre de la acción que causó el cambio
+    newBalance: number; // El nuevo saldo total del usuario
+  }
+  ```
+
+### 2. `tier_changed`
+
+- **Cuándo se dispara**: Solo cuando la evaluación de niveles determina que un usuario ha cambiado de un nivel a otro (incluyendo desde "ningún nivel" a uno, o de uno a "ningún nivel").
+- **Payload**:
+  ```typescript
+  {
+    userId: UserId;
+    from: Tier | null; // El nivel anterior del usuario (o null si no tenía)
+    to: Tier | null; // El nuevo nivel del usuario (o null si se quedó sin nivel)
+  }
+  ```
+
+## Uso en el Backend
+
+El caso de uso más común en el backend es para realizar tareas asíncronas que no deben bloquear la respuesta al usuario.
+
+<Callout title="Arquitectura Recomendada">
+  En el backend, los listeners de eventos son perfectos para añadir trabajos a
+  una cola (como BullMQ, RabbitMQ) o para llamar a servicios de terceros (como
+  un servicio de email).
+</Callout>
+
+```typescript title="lib/loyaltySystem.ts"
+import { BetterLoyalty } from "better-loyalty";
+import { myDbAdapter } from "./loyaltyAdapter";
+import { myRules } from "./loyaltyRules";
+// import { emailQueue } from '@/queues/email'; // Tu sistema de colas
+
+export const loyaltySystem = new BetterLoyalty(myDbAdapter, myRules);
+
+// --- Suscripción a los eventos ---
+
+loyaltySystem.on("tier_changed", ({ userId, to }) => {
+  if (to) {
+    console.log(
+      `[EVENTO] Usuario ${userId} ascendió a ${to.name}. Encolando email.`
+    );
+
+    // Añade un trabajo a tu cola de procesamiento en segundo plano
+    // emailQueue.add('send-tier-up-congrats', { userId, tierName: to.name });
+  }
+});
+
+loyaltySystem.on("points_updated", ({ userId, newBalance }) => {
+  console.log(
+    `[EVENTO] Puntos actualizados para ${userId}. Saldo: ${newBalance}.`
+  );
+
+  // Quizás quieras enviar este dato a un sistema de analíticas
+  // analytics.track('Points Changed', { userId, newBalance });
+});
+```
+
+Como la instancia de `loyaltySystem` es un singleton en tu backend, te suscribes una sola vez en el momento de la inicialización, y los listeners estarán activos durante todo el ciclo de vida de tu servidor.
+
+## Uso en el Frontend (con Next.js)
+
+<Callout type="warning" title="¡Cuidado en el Servidor!">
+  El patrón `.on()` no funciona para comunicación entre diferentes peticiones en
+  un entorno serverless. Usa el sistema de eventos en el backend como se
+  describe arriba para tareas asíncronas, no para "escuchar" eventos de otras
+  peticiones.
+</Callout>
+
+El sistema de eventos es **extremadamente útil en componentes de cliente (`"use client"`)** para crear una comunicación desacoplada entre diferentes partes de tu UI.
+
+**El problema:** ¿Cómo puede un componente `CartIcon` saber que un `AddToCartButton` ha sido pulsado, si no tienen una relación directa de padre-hijo?
+**La solución:** Un emisor de eventos compartido.
+
+Para lograr esto en Next.js, necesitarás un "truco" para compartir la instancia del emisor, ya que tu `loyaltySystem` vive en el servidor.
+
+### Solución: Un Emisor de Eventos para el Cliente
+
+Crea un emisor de eventos separado solo para la comunicación en el cliente.
+
+<Tabs items={['Emisor de Cliente', 'Componente Emisor', 'Componente Receptor']}>
+<Tab value="Emisor de Cliente">
+```typescript title="lib/client-events.ts"
+import mitt from 'mitt';
+
+// Define los tipos de eventos y payloads que tu UI manejará
+type ClientEvents = {
+item_added_to_cart: { productName: string; quantity: number };
+// ... otros eventos de UI
+};
+
+// Exportamos una única instancia para todo el frontend
+export const clientEmitter = mitt<ClientEvents>();
+
+````
+</Tab>
+<Tab value="Componente Emisor">
+```tsx title="components/AddToCartButton.tsx"
+"use client";
+
+import { clientEmitter } from '@/lib/client-events';
+
+export function AddToCartButton({ product }) {
+  const handleClick = () => {
+    // Al hacer clic, emitimos un evento en el emisor del cliente
+    clientEmitter.emit('item_added_to_cart', {
+      productName: product.name,
+      quantity: 1
+    });
+    // ... también podrías llamar a una Server Action aquí para actualizar el backend
+  };
+
+return <button onClick={handleClick}>Añadir al Carrito</button>;
+}
+````
+
+</Tab>
+<Tab value="Componente Receptor">
+```tsx title="components/NotificationPopup.tsx"
+"use client";
+
+import { useEffect, useState } from 'react';
+import { clientEmitter } from '@/lib/client-events';
+
+export function NotificationPopup() {
+  const [message, setMessage] = useState('');
+
+useEffect(() => {
+const showNotification = ({ productName }) => {
+setMessage(`${productName} ha sido añadido al carrito!`);
+// Oculta el mensaje después de 3 segundos
+setTimeout(() => setMessage(''), 3000);
+};
+
+    // 1. Nos suscribimos al evento
+    clientEmitter.on('item_added_to_cart', showNotification);
+
+    // 2. ¡MUY IMPORTANTE! Limpiamos la suscripción al desmontar el componente
+    return () => {
+      clientEmitter.off('item_added_to_cart', showNotification);
+    };
+
+}, []); // El array vacío asegura que la suscripción ocurra solo una vez
+
+if (!message) return null;
+
+return <div className="notification-popup">{message}</div>;
+}
+
+```
+</Tab>
+</Tabs>
+
+Al separar la lógica de eventos del backend y del frontend, mantienes tu arquitectura limpia y aprovechas lo mejor de ambos mundos: la robustez de las reacciones del backend y el dinamismo de la comunicación de la UI en el cliente.
+
+
+```

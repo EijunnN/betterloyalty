@@ -1,0 +1,170 @@
+---
+title: El Motor de Reglas
+description: Domina el corazón de better-loyalty para modelar cualquier lógica de negocio.
+---
+
+import { Callout } from "fumadocs-ui/components/callout";
+import { Tab, Tabs } from "fumadocs-ui/components/tabs";
+
+El motor de reglas es el núcleo declarativo de `better-loyalty`. En lugar de escribir lógica `if/else` en tus controladores, defines un array de objetos `LoyaltyRule`. Cada regla le dice al sistema: **"Cuando ocurra _este evento_, si se cumple _esta condición_, entonces ejecuta _esta acción_"**.
+
+Este enfoque desacopla y centraliza toda tu lógica de lealtad.
+
+## La Anatomía de una Regla
+
+Cada objeto `LoyaltyRule` tiene cuatro propiedades clave:
+
+```typescript
+export interface LoyaltyRule<P> {
+  name: string;
+  event: string;
+  condition: (context: RuleContext<P>) => boolean | Promise<boolean>;
+  action: (context: RuleContext<P>) => RuleResult | Promise<RuleResult>;
+}
+```
+
+- **`name`**: Un nombre descriptivo para la regla, útil para debugging.
+- **`event`**: El identificador de texto del evento de negocio al que esta regla debe reaccionar (ej: `'purchase_completed'`).
+- **`condition`**: Una función que recibe el contexto del evento y devuelve `true` o `false`. Si es `true`, la acción se ejecuta.
+- **`action`**: Una función que se ejecuta si la condición es `true`. Debe devolver un objeto con los `points` a otorgar y un `actionName`.
+
+## Creando Condiciones Complejas
+
+La verdadera potencia del motor de reglas reside en su flexibilidad. Las condiciones no tienen por qué ser simples.
+
+### Condiciones Síncronas
+
+Para validaciones que solo dependen del `payload` del evento.
+
+```typescript title="lib/loyaltyRules.ts"
+const rule: LoyaltyRule<{ amount: number; category: string }> = {
+  name: "Bonus por compra grande en Electrónica",
+  event: "purchase_completed",
+  condition: (ctx) => {
+    return ctx.payload.amount > 200 && ctx.payload.category === "electronics";
+  },
+  action: () => ({ points: 100, actionName: "Bonus Electrónica" }),
+};
+```
+
+### Condiciones Asíncronas
+
+¿Necesitas consultar la base de datos o una API externa para decidir si una regla se aplica? ¡Simplemente devuelve una `Promise<boolean>`!
+
+Imagina una regla que solo se aplica si es la primera compra del usuario.
+
+```typescript title="lib/loyaltyRules.ts"
+import { db } from "@/lib/database"; // Tu acceso a la base de datos
+
+const rule: LoyaltyRule<{ amount: number }> = {
+  name: "Puntos extra en la primera compra",
+  event: "purchase_completed",
+  // La función condition ahora es async
+  condition: async (ctx) => {
+    // Consultamos un servicio externo o nuestra DB
+    const purchaseCount = await db.getPurchaseCountForUser(ctx.userId);
+    return purchaseCount === 1;
+  },
+  action: () => ({ points: 500, actionName: "Bonus de Bienvenida" }),
+};
+```
+
+`better-loyalty` esperará a que la promesa se resuelva antes de continuar.
+
+## Creando Acciones Dinámicas
+
+De igual manera, los puntos a otorgar no tienen que ser un valor fijo. Pueden calcularse dinámicamente a partir del contexto del evento.
+
+### Acciones que Dependen del Payload
+
+Calcula los puntos basándote en los datos del evento.
+
+```typescript title="lib/loyaltyRules.ts"
+const rule: LoyaltyRule<{ items: Array<{ price: number; quantity: number }> }> =
+  {
+    name: "Puntos por ítem en el carrito",
+    event: "purchase_completed",
+    condition: (ctx) => ctx.payload.items.length > 0,
+    action: (ctx) => {
+      // Calculamos el total de puntos dinámicamente
+      const totalPoints = ctx.payload.items.reduce(
+        (sum, item) => sum + item.price * item.quantity,
+        0
+      );
+
+      return {
+        points: Math.floor(totalPoints),
+        actionName: "Puntos por compra detallada",
+      };
+    },
+  };
+```
+
+### Acciones Asíncronas
+
+¿Necesitas obtener un "multiplicador de puntos" de una fuente externa durante una promoción especial? ¡Las acciones también pueden ser asíncronas!
+
+```typescript title="lib/loyaltyRules.ts"
+import { promotionService } from "@/lib/promotions";
+
+const rule: LoyaltyRule<{ amount: number }> = {
+  name: "Puntos con multiplicador de promoción",
+  event: "purchase_completed",
+  condition: () => true, // Se aplica a todas las compras
+  action: async (ctx) => {
+    const multiplier = await promotionService.getCurrentMultiplier();
+    const finalPoints = Math.floor(ctx.payload.amount * multiplier);
+
+    return {
+      points: finalPoints,
+      actionName: `Compra con multiplicador x${multiplier}`,
+    };
+  },
+};
+```
+
+## Seguridad de Tipos con Genéricos
+
+Para obtener la mejor experiencia de desarrollo, define interfaces para los `payloads` de tus eventos y úsalas en tus reglas. Esto te dará un autocompletado y una seguridad de tipos impecables.
+
+<Tabs items={['Sin Tipado', 'Con Tipado']}>
+  <Tab value="Sin Tipado">
+    ```typescript
+    // Funciona, pero es propenso a errores y no hay autocompletado.
+    const rule: LoyaltyRule = {
+      name: 'Puntos por compra',
+      event: 'purchase',
+      condition: (ctx) => ctx.payload.amont > 10, // Error de tipeo (amont) no detectado
+      action: (ctx) => ({
+        points: ctx.payload.amount,
+        actionName: 'Compra',
+      }),
+    };
+    ```
+  </Tab>
+  <Tab value="Con Tipado">
+    ```typescript
+    interface PurchasePayload {
+      amount: number;
+    }
+
+    // ¡Mucho más seguro y con autocompletado!
+    const rule: LoyaltyRule<PurchasePayload> = {
+      name: 'Puntos por compra',
+      event: 'purchase',
+      condition: (ctx) => ctx.payload.amont > 10, // ERROR: Property 'amont' does not exist on type 'PurchasePayload'.
+      action: (ctx) => ({
+        points: ctx.payload.amount,
+        actionName: 'Compra',
+      }),
+    };
+    ```
+
+  </Tab>
+</Tabs>
+
+<Callout title="Consejo Profesional" type="info">
+  Aunque puedes usar `LoyaltyRule<any>` para mezclar reglas con diferentes payloads en un solo array, te recomendamos definir tipos para cada payload siempre que sea posible para aprovechar al máximo las ventajas de TypeScript.
+</Callout>
+
+Con el motor de reglas de `better-loyalty`, tienes un control total y granular para modelar cualquier escenario de negocio que puedas imaginar, todo mientras mantienes tu código limpio, centralizado y fácil de mantener.

@@ -1,30 +1,164 @@
 ---
-title: Welcome to Better Loyalty Docs
-description: Documentation for the Better Loyalty platform
+title: Introducción
+description: El framework declarativo para sistemas de fidelización y recompensas en TypeScript.
 ---
 
-# Welcome to Better Loyalty
+import { Steps, Step } from "fumadocs-ui/components/steps";
+import { File, Files } from "fumadocs-ui/components/files";
 
-This is the documentation for the Better Loyalty platform.
+# El Framework de Lealtad que los Desarrolladores Aman
 
-## Getting Started
+`better-loyalty` es un framework de TypeScript diseñado para una sola cosa: permitirte construir sistemas de fidelización complejos y robustos **sin la complejidad habitual**.
 
-Follow these steps to get started with Better Loyalty.
+Olvídate de esparcir lógica de `if/else` por toda tu aplicación. Con `better-loyalty`, defines tus reglas de negocio de forma declarativa y centralizada, y dejas que el framework orqueste la magia.
 
-### Installation
+<div className="mt-8 grid grid-cols-1 gap-4 sm:grid-cols-3">
+  <div className="rounded-lg border bg-card p-4 text-center">
+    <h3 className="mb-1 font-semibold">Motor de Reglas</h3>
+    <div className="text-sm text-muted-foreground">
+      Define tu lógica de negocio en un formato legible y centralizado.
+    </div>
+  </div>
+  <div className="rounded-lg border bg-card p-4 text-center">
+    <h3 className="mb-1 font-semibold">Agnóstico a Todo</h3>
+    <div className="text-sm text-muted-foreground">
+      Funciona con cualquier base de datos y cualquier sistema de autenticación.
+    </div>
+  </div>
+  <div className="rounded-lg border bg-card p-4 text-center">
+    <h3 className="mb-1 font-semibold">Totalmente Reactivo</h3>
+    <div className="text-sm text-muted-foreground">
+      Reacciona a eventos como `tier_changed` para construir experiencias
+      dinámicas.
+    </div>
+  </div>
+</div>
 
-Install the package using npm:
+## La Filosofía: De Imperativo a Declarativo
 
-```bash
-npm install better-loyalty
+Construir un sistema de lealtad a menudo resulta en un código enredado y difícil de mantener.
+
+### El Modo Tradicional 👎
+
+```typescript
+// En tu API de creación de reseñas...
+async function createReview(data) {
+  const review = await db.reviews.create(data);
+
+  if (review.rating >= 4 && review.text.length > 50) {
+    const userProfile = await db.users.find(review.userId);
+    const newPoints = userProfile.points + 50;
+    await db.users.update(review.userId, { points: newPoints });
+
+    // ¿Y si ahora sube de nivel? Más if/else aquí...
+  }
+  return review;
+}
 ```
 
-### Usage
+Este enfoque acopla la lógica de negocio (guardar una reseña) con la lógica de lealtad (otorgar puntos). Es frágil y se repite en cada lugar donde un usuario puede ganar puntos.
 
-Basic usage example:
+### El Modo `better-loyalty` 👍
 
-```javascript
+Con `better-loyalty`, tu código de negocio solo se preocupa por su responsabilidad principal. La lógica de lealtad se define una vez y se invoca con una sola línea.
+
+```typescript
+// Tu API de creación de reseñas con better-loyalty...
+import { loyaltySystem } from "@/lib/loyalty";
+
+async function createReview(data) {
+  const review = await db.reviews.create(data);
+
+  // Anunciamos que un evento ha ocurrido. Eso es todo.
+  await loyaltySystem.processEvent({
+    userId: review.userId,
+    event: "review_created",
+    payload: { rating: review.rating, textLength: review.text.length },
+  });
+
+  return review;
+}
+```
+
+El código es más limpio, más legible y mucho más mantenible.
+
+## Un Vistazo en 30 Segundos
+
+Así es como se ve un sistema completo con `better-loyalty`.
+
+<Steps>
+<Step>
+### 1. Implementa el Adaptador de BD
+
+Enséñale a `better-loyalty` a hablar con tu base de datos.
+
+```typescript title="lib/myAdapter.ts"
+import { IDatabaseAdapter, Tier, UserId, UserLoyaltyProfile } from 'better-loyalty';
+
+// Simulación de DB
+const db = { users: new Map(), tiers: [{ id: 'bronze', ... }] };
+
+export const myDbAdapter: IDatabaseAdapter = {
+  // ... implementación de getUserProfile, saveUserProfile, getTiers ...
+};
+```
+
+</Step>
+<Step>
+### 2. Define tus Reglas
+
+Este es el cerebro de tu sistema. Un array de objetos que describe tu negocio.
+
+```typescript title="lib/loyaltyRules.ts"
+import { LoyaltyRule } from "better-loyalty";
+
+export const myRules: LoyaltyRule<any>[] = [
+  {
+    name: "Puntos por compra > $10",
+    event: "purchase_completed",
+    condition: (ctx) => ctx.payload.amount > 10,
+    action: (ctx) => ({
+      points: Math.floor(ctx.payload.amount),
+      actionName: `Compra de $${ctx.payload.amount}`,
+    }),
+  },
+  {
+    name: "Bonus por reseña de calidad",
+    event: "review_created",
+    condition: (ctx) => ctx.payload.rating >= 4,
+    action: () => ({ points: 50, actionName: "Reseña de calidad" }),
+  },
+];
+```
+
+</Step>
+<Step>
+### 3. Inicializa y Procesa
+
+Crea la instancia del sistema y úsala en tu backend.
+
+```typescript title="lib/loyalty.ts"
 import { BetterLoyalty } from "better-loyalty";
+import { myDbAdapter } from "./myAdapter";
+import { myRules } from "./loyaltyRules";
 
-const loyalty = new BetterLoyalty();
+export const loyaltySystem = new BetterLoyalty(myDbAdapter, myRules);
+
+// Reacciona a eventos para enviar emails o notificaciones
+loyaltySystem.on("tier_changed", ({ userId, to }) => {
+  console.log(`¡${userId} ha ascendido al nivel ${to?.name}!`);
+  // emailService.sendTierUpEmail(userId, to.name);
+});
 ```
+
+</Step>
+</Steps>
+
+## ¿Listo para Empezar?
+
+Has visto la filosofía y el poder de `better-loyalty`. Ahora, sigue nuestra **[Guía de Inicio Rápido](/docs/getting-started)** para tener tu sistema funcionando en menos de 5 minutos.
+
+
+
+
+

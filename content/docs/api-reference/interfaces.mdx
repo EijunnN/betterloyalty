@@ -1,0 +1,67 @@
+---
+title: Interfaces
+description: Contratos que debes implementar para integrar y extender better-loyalty.
+---
+
+import { TypeTable } from "fumadocs-ui/components/type-table";
+import { Callout } from "fumadocs-ui/components/callout";
+
+# Interfaces
+
+Estas son las interfaces que `better-loyalty` expone para que puedas integrarlo perfectamente con tu propia infraestructura y lógica de negocio.
+
+## `IDatabaseAdapter`
+
+**Este es el contrato más importante del framework.** Al ser agnóstico a la base de datos, `better-loyalty` necesita que le proporciones un objeto que implemente esta interfaz. Este objeto actuará como el puente entre el framework y tu sistema de persistencia (SQL, NoSQL, etc.).
+
+```typescript
+export interface IDatabaseAdapter {
+  getUserProfile(userId: UserId): Promise<UserLoyaltyProfile | null>;
+  saveUserProfile(profile: UserLoyaltyProfile): Promise<UserLoyaltyProfile>;
+  getTiers(): Promise<Tier[]>;
+}
+```
+
+<TypeTable
+  type={{
+    getUserProfile: {
+      description:
+        "Debe recibir un `userId` y devolver el [perfil de lealtad](/docs/api-reference/data-types#userloyaltyprofile) completo del usuario, o `null` si el usuario aún no tiene un perfil.",
+      type: "(userId: UserId) => Promise<UserLoyaltyProfile | null>",
+      required: true,
+    },
+    saveUserProfile: {
+      description:
+        "Debe recibir un objeto [`UserLoyaltyProfile`](/docs/api-reference/data-types#userloyaltyprofile) y encargarse de crearlo o actualizarlo en tu base de datos. Se recomienda que devuelva el perfil guardado.",
+      type: "(profile: UserLoyaltyProfile) => Promise<UserLoyaltyProfile>",
+      required: true,
+    },
+    getTiers: {
+      description:
+        "No recibe argumentos y debe devolver un array con todos los objetos [`Tier`](/docs/api-reference/data-types#tier) que hayas definido en tu sistema.",
+      type: "() => Promise<Tier[]>",
+      required: true,
+    },
+  }}
+/>
+
+<Callout title="Guía Práctica">
+  Consulta la [Guía de Inicio Rápido](/docs/getting-started) para ver un ejemplo
+  completo de cómo implementar este adaptador.
+</Callout>
+
+---
+
+## `IBenefit<T>`
+
+Define la estructura para un beneficio o recompensa aplicable. Este es un concepto avanzado para futuras extensiones del framework.
+
+```typescript
+export interface IBenefit<T> {
+  id: string;
+  apply(context: T): T;
+  isApplicable(context: T): boolean;
+}
+```
+
+El genérico `T` representa el contexto sobre el cual se aplicaría el beneficio (por ejemplo, un carrito de compras `{ total: number }`).

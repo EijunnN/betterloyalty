@@ -1,0 +1,195 @@
+---
+title: Tipos de Datos
+description: Referencia completa de todos los tipos y formas de datos exportados por better-loyalty.
+---
+
+import { TypeTable } from "fumadocs-ui/components/type-table";
+
+# Tipos de Datos
+
+Estos son los tipos de datos y las formas de los objetos que utilizarás al interactuar con la API de `better-loyalty`. Todos son exportados desde el paquete principal.
+
+## Tipos Primitivos
+
+### `UserId`
+
+El identificador único de un usuario en tu sistema.
+
+- **Definición:** `type UserId = string | number;`
+
+---
+
+## Tipos del Motor de Reglas
+
+### `LoyaltyRule`
+
+Define una regla de negocio completa.
+
+- **Definición:** `interface LoyaltyRule<P>`
+
+<TypeTable
+  type={{
+    name: {
+      description: "Un nombre descriptivo para la regla.",
+      type: "string",
+      required: true,
+    },
+    event: {
+      description: "El nombre del evento que activa la regla.",
+      type: "string",
+      required: true,
+    },
+    condition: {
+      description: "Función que devuelve `true` si la regla debe ejecutarse.",
+      type: "function",
+      required: true,
+    },
+    action: {
+      description:
+        "Función que devuelve los puntos a otorgar y un nombre para la acción.",
+      type: "function",
+      required: true,
+    },
+  }}
+/>
+
+### `RuleContext`
+
+El objeto de contexto que se pasa a las funciones `condition` y `action`.
+
+- **Definición:** `interface RuleContext<P>`
+
+<TypeTable
+  type={{
+    userId: {
+      description: "El identificador único del usuario.",
+      type: "UserId",
+      required: true,
+    },
+    event: {
+      description: "El nombre del evento que se está procesando.",
+      type: "string",
+      required: true,
+    },
+    payload: {
+      description: "Un objeto con los datos específicos del evento.",
+      type: "P",
+      required: true,
+    },
+  }}
+/>
+
+### `RuleResult`
+
+El objeto que debe devolver la función `action` de una regla.
+
+- **Definición:** `interface RuleResult`
+
+<TypeTable
+  type={{
+    points: {
+      description: "La cantidad de puntos a otorgar (puede ser negativa).",
+      type: "number",
+      required: true,
+    },
+    actionName: {
+      description:
+        "Un nombre descriptivo para la acción que se está registrando.",
+      type: "string",
+      required: true,
+    },
+  }}
+/>
+
+---
+
+## Tipos de Perfil y Niveles
+
+### `UserLoyaltyProfile`
+
+Representa el estado de lealtad completo de un usuario. Este es el objeto que tu `IDatabaseAdapter` debe guardar y recuperar.
+
+- **Definición:** `interface UserLoyaltyProfile`
+
+<TypeTable
+  type={{
+    userId: {
+      description: "El identificador único del usuario.",
+      type: "UserId",
+      required: true,
+    },
+    points: {
+      description: "El saldo actual de puntos del usuario.",
+      type: "number",
+      required: true,
+    },
+    tierId: {
+      description:
+        "El ID del nivel actual del usuario, o `null` si no tiene nivel.",
+      type: "string | null",
+      required: true,
+    },
+    history: {
+      description: "El historial completo de transacciones de puntos.",
+      type: "LoyaltyEvent[]",
+      required: true,
+    },
+  }}
+/>
+
+### `Tier`
+
+Define un nivel de lealtad en tu sistema.
+
+- **Definición:** `interface Tier`
+
+<TypeTable
+  type={{
+    id: {
+      description: "El identificador único del nivel.",
+      type: "string",
+      required: true,
+    },
+    name: {
+      description: "El nombre legible del nivel.",
+      type: "string",
+      required: true,
+    },
+    minPoints: {
+      description: "Puntos mínimos para alcanzar este nivel.",
+      type: "number",
+      required: true,
+    },
+    benefits: {
+      description: "Un array de identificadores de beneficios asociados.",
+      type: "string[]",
+      required: true,
+    },
+  }}
+/>
+
+### `LoyaltyEvent`
+
+Representa una única transacción en el historial de puntos de un usuario.
+
+- **Definición:** `interface LoyaltyEvent`
+
+<TypeTable
+  type={{
+    action: {
+      description: "El nombre de la acción que generó este evento.",
+      type: "string",
+      required: true,
+    },
+    pointsChange: {
+      description: "La cantidad de puntos que se agregaron o restaron.",
+      type: "number",
+      required: true,
+    },
+    timestamp: {
+      description: "La fecha y hora exacta cuando ocurrió el evento.",
+      type: "Date",
+      required: true,
+    },
+  }}
+/>

@@ -1,0 +1,110 @@
+---
+title: Clase Principal
+description: Referencia completa de la clase BetterLoyalty y sus métodos públicos.
+---
+
+import { TypeTable } from "fumadocs-ui/components/type-table";
+import { Callout } from "fumadocs-ui/components/callout";
+
+# Clase `BetterLoyalty`
+
+Esta es la clase principal y el punto de entrada para todo el framework. Se encarga de orquestar los módulos de puntos y niveles, procesar las reglas y emitir eventos.
+
+## Constructor
+
+Para crear una nueva instancia del sistema de lealtad, utiliza su constructor.
+
+```typescript
+new BetterLoyalty(dbAdapter: IDatabaseAdapter, rules?: LoyaltyRule<any>[])
+```
+
+<TypeTable
+  type={{
+    dbAdapter: {
+      description:
+        "Una implementación de la interfaz `IDatabaseAdapter` que conecta el framework con tu base de datos.",
+      type: "IDatabaseAdapter",
+      required: true,
+    },
+    rules: {
+      description:
+        "Un array opcional de reglas de lealtad para definir la lógica de tu negocio. Si se omite, solo funcionarán las operaciones manuales de puntos.",
+      type: "LoyaltyRule[]",
+    },
+  }}
+/>
+
+---
+
+## Propiedades Públicas
+
+### `points`
+
+Proporciona acceso directo al módulo de gestión de puntos para operaciones manuales. Úsalo cuando necesites otorgar o canjear puntos fuera del sistema de reglas.
+
+- **Tipo:** `PointsModule`
+
+#### Métodos del Módulo `points`
+
+<TypeTable
+  type={{
+    ".add()": {
+      description: "Otorga puntos a un usuario. Crea un perfil si no existe.",
+      type: "(userId, points, action) => Promise<UserLoyaltyProfile>",
+    },
+    ".subtract()": {
+      description:
+        "Canjea (resta) puntos de un usuario. Lanza un error si el saldo es insuficiente.",
+      type: "(userId, points, action) => Promise<UserLoyaltyProfile>",
+    },
+    ".getBalance()": {
+      description:
+        "Obtiene el saldo de puntos actual de un usuario. Devuelve `0` si el usuario no tiene perfil.",
+      type: "(userId) => Promise<number>",
+    },
+  }}
+/>
+
+---
+
+## Métodos Públicos
+
+### `processEvent`
+
+El método principal para procesar un evento de negocio. Itera sobre las reglas proporcionadas en el constructor y, si las condiciones se cumplen, ejecuta las acciones y evalúa un posible cambio de nivel.
+
+```typescript
+processEvent<P>(context: RuleContext<P>): Promise<void>
+```
+
+<TypeTable
+  type={{
+    context: {
+      description:
+        "El contexto del evento que contiene el `userId`, el nombre del `event` y el `payload` con los datos.",
+      type: "RuleContext<P>",
+      required: true,
+    },
+  }}
+/>
+
+### `on`
+
+Se suscribe a un evento interno del framework para reaccionar a cambios.
+
+```typescript
+on<K extends keyof LoyaltyEvents>(event: K, handler: (payload: LoyaltyEvents[K]) => void): void
+```
+
+<Callout title="Eventos Disponibles">
+  Consulta la guía del [Sistema de Eventos](/docs/core-concepts/event-system)
+  para ver la lista completa de eventos y la estructura de sus payloads.
+</Callout>
+
+### `off`
+
+Se desuscribe de un evento, evitando memory leaks, especialmente útil en el frontend.
+
+```typescript
+off<K extends keyof LoyaltyEvents>(event: K, handler: (payload: LoyaltyEvents[K]) => void): void
+```

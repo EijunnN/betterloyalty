@@ -38,14 +38,14 @@ export default function Home() {
         <div className="container flex h-12 items-center justify-center">
           <div className="flex items-center space-x-2 text-sm">
             <span className="text-gray-500">
-              Introducing Better Loyalty Infrastructure
+              Introducing Better Loyalty Framework
             </span>
             <span className="text-gray-700">|</span>
             <Link
               href="/docs"
               className="text-blue-400 hover:text-blue-300 transition-colors"
             >
-              Join the waitlist →
+              Read the docs →
             </Link>
           </div>
         </div>
@@ -82,18 +82,7 @@ export default function Home() {
             >
               changelogs
             </Link>
-            <Link
-              href="/blogs"
-              className="text-sm font-medium text-gray-400 hover:text-gray-200 transition-colors"
-            >
-              blogs
-            </Link>
-            <Link
-              href="/community"
-              className="text-sm font-medium text-gray-400 hover:text-gray-200 transition-colors"
-            >
-              community
-            </Link>
+
             <Link
               href="https://github.com/EijunnN/better-loyalty"
               className="text-gray-400 hover:text-gray-200 transition-colors"
@@ -172,7 +161,7 @@ export default function Home() {
                 </div>
                 <div className="flex items-center space-x-1">
                   <div className="px-3 py-1 bg-[#2a2a2a] text-white rounded-t text-xs border-b-2 border-blue-400">
-                    loyalty.ts
+                    loyaltyRules.ts
                   </div>
                 </div>
                 <Button
@@ -192,37 +181,38 @@ export default function Home() {
                       01
                     </span>
                     <span>
-                      <span className="text-purple-400">export</span>{" "}
-                      <span className="text-purple-400">const</span>{" "}
-                      <span className="text-blue-300">loyalty</span>{" "}
-                      <span className="text-white">=</span>{" "}
-                      <span className="text-emerald-400">betterLoyalty</span>
-                      <span className="text-white">(</span>
-                      <span className="text-yellow-300">{"{"}</span>
+                      <span className="text-purple-400">import</span>{" "}
+                      <span className="text-yellow-300">{"{"}</span>{" "}
+                      <span className="text-blue-300">LoyaltyRule</span>{" "}
+                      <span className="text-yellow-300">{"}"}</span>{" "}
+                      <span className="text-purple-400">from</span>{" "}
+                      <span className="text-green-400">
+                        &quot;better-loyalty&quot;
+                      </span>
+                      <span className="text-white">;</span>
                     </span>
                   </div>
                   <div className="flex">
                     <span className="text-gray-600 w-8 text-right mr-4 select-none">
                       02
                     </span>
-                    <span className="ml-4">
-                      <span className="text-red-300">database</span>
-                      <span className="text-white">:</span>{" "}
-                      <span className="text-purple-400">new</span>{" "}
-                      <span className="text-emerald-400">Pool</span>
-                      <span className="text-white">(</span>
-                      <span className="text-yellow-300">{"{"}</span>
+                    <span className="text-white">
+                      <br />
                     </span>
                   </div>
                   <div className="flex">
                     <span className="text-gray-600 w-8 text-right mr-4 select-none">
                       03
                     </span>
-                    <span className="ml-8">
-                      <span className="text-red-300">connectionString</span>
+                    <span>
+                      <span className="text-purple-400">export</span>{" "}
+                      <span className="text-purple-400">const</span>{" "}
+                      <span className="text-blue-300">loyaltyRules</span>{" "}
                       <span className="text-white">:</span>{" "}
-                      <span className="text-pink-400">DATABASE_URL</span>
-                      <span className="text-white">,</span>
+                      <span className="text-blue-300">LoyaltyRule</span>
+                      <span className="text-white">[]</span>{" "}
+                      <span className="text-white">=</span>{" "}
+                      <span className="text-yellow-300">[</span>
                     </span>
                   </div>
                   <div className="flex">
@@ -230,18 +220,20 @@ export default function Home() {
                       04
                     </span>
                     <span className="ml-4">
-                      <span className="text-yellow-300">{"}"}</span>
-                      <span className="text-white">),</span>
+                      <span className="text-yellow-300">{"{"}</span>
                     </span>
                   </div>
                   <div className="flex">
                     <span className="text-gray-600 w-8 text-right mr-4 select-none">
                       05
                     </span>
-                    <span className="ml-4">
-                      <span className="text-red-300">pointsAndRewards</span>
+                    <span className="ml-8">
+                      <span className="text-red-300">name</span>
                       <span className="text-white">:</span>{" "}
-                      <span className="text-yellow-300">{"{"}</span>
+                      <span className="text-green-400">
+                        &quot;Puntos por compra&quot;
+                      </span>
+                      <span className="text-white">,</span>
                     </span>
                   </div>
                   <div className="flex">
@@ -249,9 +241,11 @@ export default function Home() {
                       06
                     </span>
                     <span className="ml-8">
-                      <span className="text-red-300">enabled</span>
+                      <span className="text-red-300">event</span>
                       <span className="text-white">:</span>{" "}
-                      <span className="text-orange-400">true</span>
+                      <span className="text-green-400">
+                        &quot;purchase_completed&quot;
+                      </span>
                       <span className="text-white">,</span>
                     </span>
                   </div>
@@ -259,8 +253,20 @@ export default function Home() {
                     <span className="text-gray-600 w-8 text-right mr-4 select-none">
                       07
                     </span>
-                    <span className="ml-4">
-                      <span className="text-yellow-300">{"}"}</span>
+                    <span className="ml-8">
+                      <span className="text-red-300">condition</span>
+                      <span className="text-white">:</span>{" "}
+                      <span className="text-purple-400">(</span>
+                      <span className="text-blue-300">ctx</span>
+                      <span className="text-purple-400">)</span>{" "}
+                      <span className="text-purple-400">{"=>"}</span>{" "}
+                      <span className="text-blue-300">ctx</span>
+                      <span className="text-white">.</span>
+                      <span className="text-red-300">payload</span>
+                      <span className="text-white">.</span>
+                      <span className="text-red-300">amount</span>{" "}
+                      <span className="text-white">{">"}</span>{" "}
+                      <span className="text-orange-400">10</span>
                       <span className="text-white">,</span>
                     </span>
                   </div>
@@ -268,19 +274,33 @@ export default function Home() {
                     <span className="text-gray-600 w-8 text-right mr-4 select-none">
                       08
                     </span>
-                    <span className="ml-4">
-                      <span className="text-red-300">plugins</span>
+                    <span className="ml-8">
+                      <span className="text-red-300">action</span>
                       <span className="text-white">:</span>{" "}
-                      <span className="text-yellow-300">[</span>
+                      <span className="text-purple-400">(</span>
+                      <span className="text-blue-300">ctx</span>
+                      <span className="text-purple-400">)</span>{" "}
+                      <span className="text-purple-400">{"=>"}</span>{" "}
+                      <span className="text-yellow-300">{"{"}</span>
                     </span>
                   </div>
                   <div className="flex">
                     <span className="text-gray-600 w-8 text-right mr-4 select-none">
                       09
                     </span>
-                    <span className="ml-8">
-                      <span className="text-emerald-400">organization</span>
-                      <span className="text-white">()</span>
+                    <span className="ml-12">
+                      <span className="text-red-300">points</span>
+                      <span className="text-white">:</span>{" "}
+                      <span className="text-blue-300">Math</span>
+                      <span className="text-white">.</span>
+                      <span className="text-red-300">floor</span>
+                      <span className="text-purple-400">(</span>
+                      <span className="text-blue-300">ctx</span>
+                      <span className="text-white">.</span>
+                      <span className="text-red-300">payload</span>
+                      <span className="text-white">.</span>
+                      <span className="text-red-300">amount</span>
+                      <span className="text-purple-400">)</span>
                       <span className="text-white">,</span>
                     </span>
                   </div>
@@ -288,27 +308,29 @@ export default function Home() {
                     <span className="text-gray-600 w-8 text-right mr-4 select-none">
                       10
                     </span>
-                    <span className="ml-8">
-                      <span className="text-emerald-400">twoFactor</span>
-                      <span className="text-white">()</span>
-                      <span className="text-white">,</span>
+                    <span className="ml-12">
+                      <span className="text-red-300">actionName</span>
+                      <span className="text-white">:</span>{" "}
+                      <span className="text-green-400">
+                        &quot;Compra realizada&quot;
+                      </span>
                     </span>
                   </div>
                   <div className="flex">
                     <span className="text-gray-600 w-8 text-right mr-4 select-none">
                       11
                     </span>
-                    <span className="ml-4">
-                      <span className="text-yellow-300">]</span>
+                    <span className="ml-8">
+                      <span className="text-yellow-300">{"}"}</span>
                     </span>
                   </div>
                   <div className="flex">
                     <span className="text-gray-600 w-8 text-right mr-4 select-none">
                       12
                     </span>
-                    <span>
-                      <span className="text-yellow-300">{"}"}</span>
-                      <span className="text-white">)</span>
+                    <span className="ml-4">
+                      <span className="text-yellow-300">]</span>
+                      <span className="text-white">;</span>
                     </span>
                   </div>
                 </div>
@@ -340,15 +362,15 @@ export default function Home() {
               </div>
               <div>
                 <CardTitle className="text-lg text-white mb-3">
-                  Framework Agnostic
+                  Motor de Reglas
                 </CardTitle>
                 <CardDescription className="text-gray-400 text-sm leading-relaxed">
                   <strong className="text-gray-200">
-                    Support for popular frameworks.
+                    Define tu lógica de negocio de forma declarativa.
                   </strong>
                   <br />
-                  Supports popular frameworks, including React, Vue, Svelte,
-                  Astro, and more.
+                  Define tus reglas de lealtad en un formato legible y
+                  centralizado. Sin más if/else esparcidos por tu código.
                 </CardDescription>
               </div>
             </CardHeader>
@@ -361,15 +383,15 @@ export default function Home() {
               </div>
               <div>
                 <CardTitle className="text-lg text-white mb-3">
-                  Points & Rewards Authentication.
+                  Agnóstico a Todo
                 </CardTitle>
                 <CardDescription className="text-gray-400 text-sm leading-relaxed">
                   <strong className="text-gray-200">
-                    Built-in support for points and rewards authentication.
+                    Funciona con cualquier base de datos.
                   </strong>
                   <br />
-                  Built-in support for points and rewards authentication, with
-                  session management and user tiers.
+                  Funciona con cualquier base de datos y cualquier sistema de
+                  autenticación. Solo implementa la interfaz y listo.
                 </CardDescription>
               </div>
             </CardHeader>
@@ -382,15 +404,15 @@ export default function Home() {
               </div>
               <div>
                 <CardTitle className="text-lg text-white mb-3">
-                  Support multiple OAuth providers.
+                  Totalmente Reactivo
                 </CardTitle>
                 <CardDescription className="text-gray-400 text-sm leading-relaxed">
                   <strong className="text-gray-200">
-                    Allow users to sign in with their accounts.
+                    Reacciona a eventos en tiempo real.
                   </strong>
                   <br />
-                  Allow users to sign in with their accounts, including GitHub,
-                  Google, Facebook, and more.
+                  Reacciona a eventos como tier_changed para construir
+                  experiencias dinámicas y notificaciones en tiempo real.
                 </CardDescription>
               </div>
             </CardHeader>

@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Button } from "@/components/ui/button"; // Asumo que tienes un componente Button
+import { Button } from "@/components/ui/button"; // Asumo que tienes este componente
 import {
   Github,
   BookOpen,
@@ -9,23 +9,26 @@ import {
   Rocket,
   Package,
   BrainCircuit,
+  Zap,
+  Wand2,
 } from "lucide-react";
 
-// Un pequeño componente para las etiquetas de cambio, para reutilizarlo
+// Componente helper para las etiquetas de cambio, asegurando consistencia.
 const ChangeTag = ({
   type,
 }: {
-  type: "Feature" | "Fix" | "Docs" | "Refactor";
+  type: "Breaking" | "Feature" | "Fix" | "Docs" | "Refactor";
 }) => {
   const styles = {
+    Breaking: "bg-red-900/60 text-red-300 border-red-600/60",
     Feature: "bg-blue-900/50 text-blue-300 border-blue-700/50",
-    Fix: "bg-red-900/50 text-red-300 border-red-700/50",
+    Fix: "bg-orange-900/50 text-orange-300 border-orange-700/50",
     Docs: "bg-green-900/50 text-green-300 border-green-700/50",
     Refactor: "bg-purple-900/50 text-purple-300 border-purple-700/50",
   };
   return (
     <span
-      className={`inline-block text-xs font-medium px-2 py-0.5 rounded-full border ${styles[type]}`}
+      className={`mr-2 inline-block text-xs font-medium px-2 py-0.5 rounded-full border ${styles[type]}`}
     >
       {type}
     </span>
@@ -35,7 +38,7 @@ const ChangeTag = ({
 export default function ChangelogsPage() {
   return (
     <div className="min-h-screen bg-[#0a0a0a] text-white relative overflow-hidden">
-      {/* Background Pattern */}
+      {/* Patrón de fondo */}
       <div
         className="absolute inset-0 opacity-20"
         style={{
@@ -44,11 +47,11 @@ export default function ChangelogsPage() {
         }}
       />
 
-      {/* Decorative Plus Icons */}
+      {/* Íconos decorativos */}
       <Plus className="absolute top-32 left-8 w-4 h-4 text-gray-700" />
       <Plus className="absolute top-32 right-8 w-4 h-4 text-gray-700" />
 
-      {/* Header - Sin cambios, tu diseño es excelente */}
+      {/* Header */}
       <header className="border-b border-gray-800/50 bg-[#0a0a0a]/95 backdrop-blur sticky top-0 z-50">
         <div className="container flex h-16 items-center justify-between">
           <div className="flex items-center space-x-3">
@@ -104,10 +107,10 @@ export default function ChangelogsPage() {
         </div>
       </header>
 
-      {/* Main Content */}
+      {/* Contenido Principal */}
       <div className="container mx-auto px-4 py-16">
         <div className="grid lg:grid-cols-2 gap-16">
-          {/* Left Column - Info (Sin cambios, tu diseño es excelente) */}
+          {/* Columna Izquierda - Info */}
           <div className="space-y-8">
             <div className="space-y-6">
               <h1 className="text-5xl md:text-6xl font-bold leading-tight">
@@ -153,24 +156,97 @@ export default function ChangelogsPage() {
             </div>
           </div>
 
-          {/* Right Column - Changelog Timeline (AQUÍ ESTÁ LA MEJORA) */}
+          {/* Columna Derecha - Timeline del Changelog */}
           <div className="relative">
-            {/* Timeline Line */}
             <div className="absolute left-32 top-0 bottom-0 w-px bg-gradient-to-b from-gray-600 via-gray-700 to-transparent"></div>
-
             <div className="space-y-16">
-              {/* Version 1.0.0 - Lanzamiento Inicial */}
+              {/* v2.0.0 - API Rediseñada */}
+              <div className="relative">
+                <div className="flex items-center mb-6">
+                  <span className="text-gray-400 text-sm w-24 text-right mr-8">
+                    Jul 29, 2025
+                  </span>
+                  <div className="w-4 h-4 bg-purple-400 rounded-full ring-4 ring-purple-900/50 absolute left-32 transform -translate-x-1/2 flex items-center justify-center">
+                    <Wand2 className="w-2 h-2 text-white" />
+                  </div>
+                </div>
+                <div className="ml-40">
+                  <h3 className="text-xl font-semibold mb-2">
+                    better-loyalty@2.0.0
+                  </h3>
+                  <p className="text-purple-300 font-medium mb-6">
+                    ✨ API Rediseñada para una Experiencia de Élite (DX)
+                  </p>
+                  <div className="space-y-6">
+                    <div>
+                      <h4 className="flex items-center space-x-2 text-gray-300 font-medium mb-3">
+                        <Zap className="w-4 h-4 text-red-400" />
+                        <span>Breaking Changes</span>
+                      </h4>
+                      <ul className="space-y-2 text-gray-400 text-sm">
+                        <li className="flex items-start">
+                          <span className="w-1 h-1 bg-gray-500 rounded-full mt-2 mr-3 flex-shrink-0"></span>
+                          <ChangeTag type="Breaking" />
+                          La clase `BetterLoyalty` ya no es la API pública. Se
+                          reemplaza por un sistema de factoría más simple.
+                        </li>
+                        <li className="flex items-start">
+                          <span className="w-1 h-1 bg-gray-500 rounded-full mt-2 mr-3 flex-shrink-0"></span>
+                          <ChangeTag type="Breaking" />
+                          `processEvent` se renombra a `trigger` con una firma
+                          más simple: `trigger(eventName, userId, payload)`.
+                        </li>
+                        <li className="flex items-start">
+                          <span className="w-1 h-1 bg-gray-500 rounded-full mt-2 mr-3 flex-shrink-0"></span>
+                          <ChangeTag type="Breaking" />
+                          La definición de reglas ya no es un array de objetos,
+                          sino un único objeto de configuración para una mejor
+                          inferencia de tipos.
+                        </li>
+                      </ul>
+                    </div>
+                    <div>
+                      <h4 className="flex items-center space-x-2 text-gray-300 font-medium mb-3">
+                        <BrainCircuit className="w-4 h-4 text-blue-400" />
+                        <span>Nuevas Características y Mejoras</span>
+                      </h4>
+                      <ul className="space-y-2 text-gray-400 text-sm">
+                        <li className="flex items-start">
+                          <span className="w-1 h-1 bg-gray-500 rounded-full mt-2 mr-3 flex-shrink-0"></span>
+                          <ChangeTag type="Feature" />
+                          Se introduce `createLoyaltySystem()` como el único
+                          punto de entrada para configurar el framework.
+                        </li>
+                        <li className="flex items-start">
+                          <span className="w-1 h-1 bg-gray-500 rounded-full mt-2 mr-3 flex-shrink-0"></span>
+                          <ChangeTag type="Feature" />
+                          Nueva función `defineRules()` que proporciona
+                          inferencia de tipos automática entre el nombre del
+                          evento y su `payload`.
+                        </li>
+                        <li className="flex items-start">
+                          <span className="w-1 h-1 bg-gray-500 rounded-full mt-2 mr-3 flex-shrink-0"></span>
+                          <ChangeTag type="Refactor" />
+                          Las funciones `action` y `condition` ahora reciben
+                          argumentos desestructurados (`payload`, `userId`) en
+                          lugar de un objeto `context`, simplificando su uso.
+                        </li>
+                      </ul>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* v1.0.0 - Lanzamiento Inicial */}
               <div className="relative">
                 <div className="flex items-center mb-6">
                   <span className="text-gray-400 text-sm w-24 text-right mr-8">
                     Jul 28, 2025
                   </span>
-                  {/* El punto de la timeline ahora es más visible y representa un hito */}
                   <div className="w-4 h-4 bg-blue-400 rounded-full ring-4 ring-blue-900/50 absolute left-32 transform -translate-x-1/2 flex items-center justify-center">
                     <Rocket className="w-2 h-2 text-white" />
                   </div>
                 </div>
-
                 <div className="ml-40">
                   <h3 className="text-xl font-semibold mb-2">
                     better-loyalty@1.0.0
@@ -178,84 +254,60 @@ export default function ChangelogsPage() {
                   <p className="text-blue-300 font-medium mb-6">
                     🚀 Lanzamiento Inicial
                   </p>
-
                   <div className="space-y-6">
                     <div>
                       <h4 className="flex items-center space-x-2 text-gray-300 font-medium mb-3">
                         <BrainCircuit className="w-4 h-4 text-purple-400" />
-                        <span>Características Principales (Core Features)</span>
+                        <span>Características Principales</span>
                       </h4>
                       <ul className="space-y-2 text-gray-400 text-sm">
                         <li className="flex items-start">
                           <span className="w-1 h-1 bg-gray-500 rounded-full mt-2 mr-3 flex-shrink-0"></span>
-                          <ChangeTag type="Feature" /> Se introduce el **Motor
-                          de Reglas Declarativo** para centralizar la lógica de
-                          negocio.
+                          <ChangeTag type="Feature" />
+                          Se introduce el **Motor de Reglas Declarativo** para
+                          centralizar la lógica de negocio.
                         </li>
                         <li className="flex items-start">
                           <span className="w-1 h-1 bg-gray-500 rounded-full mt-2 mr-3 flex-shrink-0"></span>
-                          <ChangeTag type="Feature" /> Implementación de la
-                          interfaz `IDatabaseAdapter` para ser **agnóstico a la
-                          base de datos**.
+                          <ChangeTag type="Feature" />
+                          Implementación de la interfaz `IDatabaseAdapter` para
+                          ser **agnóstico a la base de datos**.
                         </li>
                         <li className="flex items-start">
                           <span className="w-1 h-1 bg-gray-500 rounded-full mt-2 mr-3 flex-shrink-0"></span>
-                          <ChangeTag type="Feature" /> Se añade un **Sistema de
-                          Eventos** (`on`/`off`) para reaccionar a
-                          `points_updated` y `tier_changed`.
-                        </li>
-                        <li className="flex items-start">
-                          <span className="w-1 h-1 bg-gray-500 rounded-full mt-2 mr-3 flex-shrink-0"></span>
-                          <ChangeTag type="Feature" /> Módulos separados para la
-                          gestión de Puntos (`PointsModule`) y Niveles
-                          (`TiersModule`).
+                          <ChangeTag type="Feature" />
+                          Se añade un **Sistema de Eventos** (`on`/`off`) para
+                          reaccionar a `points_updated` y `tier_changed`.
                         </li>
                       </ul>
                     </div>
-
                     <div>
                       <h4 className="flex items-center space-x-2 text-gray-300 font-medium mb-3">
                         <Package className="w-4 h-4 text-green-400" />
-                        <span>Paquete y Herramientas (Tooling)</span>
+                        <span>Paquete y Herramientas</span>
                       </h4>
                       <ul className="space-y-2 text-gray-400 text-sm">
                         <li className="flex items-start">
                           <span className="w-1 h-1 bg-gray-500 rounded-full mt-2 mr-3 flex-shrink-0"></span>
-                          <ChangeTag type="Docs" /> Lanzamiento del sitio de
-                          documentación inicial construido con **Fumadocs**.
+                          <ChangeTag type="Docs" />
+                          Lanzamiento del sitio de documentación inicial
+                          construido con **Fumadocs**.
                         </li>
                         <li className="flex items-start">
                           <span className="w-1 h-1 bg-gray-500 rounded-full mt-2 mr-3 flex-shrink-0"></span>
-                          <ChangeTag type="Feature" /> Configuración de `tsup`
-                          para empaquetar en formatos CJS y ESM.
+                          <ChangeTag type="Feature" />
+                          Configuración de `tsup` para empaquetar en formatos
+                          CJS y ESM.
                         </li>
                         <li className="flex items-start">
                           <span className="w-1 h-1 bg-gray-500 rounded-full mt-2 mr-3 flex-shrink-0"></span>
-                          <ChangeTag type="Feature" /> Suite de tests inicial
-                          con **Vitest** cubriendo la lógica principal.
+                          <ChangeTag type="Feature" />
+                          Suite de tests inicial con **Vitest** cubriendo la
+                          lógica principal.
                         </li>
                       </ul>
                     </div>
                   </div>
-                </div>
-              </div>
-
-              {/* Aquí empezarías a añadir futuras versiones, por ejemplo v1.0.1 */}
-              <div className="relative opacity-50">
-                <div className="flex items-center mb-6">
-                  <span className="text-gray-400 text-sm w-24 text-right mr-8">
-                    Próximamente...
-                  </span>
-                  <div className="w-2 h-2 bg-gray-600 rounded-full absolute left-32 transform -translate-x-1/2"></div>
-                </div>
-                <div className="ml-40">
-                  <h3 className="text-xl font-semibold mb-4 text-gray-500">
-                    Próximas Mejoras
-                  </h3>
-                  <p className="text-gray-400 text-sm">
-                    Estamos trabajando en adaptadores pre-construidos y más...
-                    ¡Mantente al tanto!
-                  </p>
                 </div>
               </div>
             </div>
@@ -263,7 +315,7 @@ export default function ChangelogsPage() {
         </div>
       </div>
 
-      {/* Footer (Sin cambios) */}
+      {/* Footer */}
       <footer className="border-t border-gray-800/30 bg-[#0a0a0a]/95 backdrop-blur relative z-10 mt-24">
         <div className="container flex h-16 items-center justify-between">
           <div className="flex items-center space-x-2">
